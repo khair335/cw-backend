@@ -1,6 +1,6 @@
-# Backend Payment Verification Server
+# Backend API Server
 
-This is a standalone Express.js server for verifying Stripe payment sessions.
+This is a standalone Express.js server for handling authentication with ResDiary API and verifying Stripe payment sessions.
 
 ## Setup
 
@@ -30,6 +30,49 @@ This is a standalone Express.js server for verifying Stripe payment sessions.
    ```
 
 ## API Endpoints
+
+### Authentication
+
+#### Login to ResDiary API
+```
+POST /api/auth
+```
+Authenticates with the ResDiary API and returns an access token.
+
+**Request Body:** None (credentials configured server-side)
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "tokenExpiryUtc": "2025-11-04T12:00:00.000Z"
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Authentication failed with ResDiary API"
+}
+```
+
+#### Auth Health Check
+```
+GET /api/auth/health
+```
+Returns authentication service status.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "message": "Auth service is running",
+  "credentialsConfigured": true,
+  "timestamp": "2025-11-04T10:00:00.000Z"
+}
+```
 
 ### Health Check
 ```
@@ -81,6 +124,8 @@ Verifies a Stripe checkout session.
 |----------|-------------|---------|
 | `PORT` | Server port | `5000` |
 | `NODE_ENV` | Environment | `development` or `production` |
+| `RESDIARY_USERNAME` | ResDiary API username | `resdiaryapi@thecatandwickets.com` |
+| `RESDIARY_PASSWORD` | ResDiary API password | `your_password_here` |
 | `STRIPE_SECRET_KEY` | Stripe secret key | `sk_test_xxxxx` |
 | `FRONTEND_URL` | Frontend URL for CORS | `http://localhost:3000` |
 
@@ -89,13 +134,15 @@ Verifies a Stripe checkout session.
 ```
 backend/
 ├── config/
-│   └── stripe.js          # Stripe configuration
+│   └── stripe.js           # Stripe configuration
 ├── controllers/
+│   ├── authController.js   # Authentication logic
 │   └── paymentController.js # Payment logic
 ├── middleware/
 │   └── errorHandler.js     # Error handling
 ├── routes/
-│   └── payment.js          # API routes
+│   ├── auth.js             # Authentication routes
+│   └── payment.js          # Payment API routes
 ├── .env                    # Environment variables (create from .env.example)
 ├── .env.example            # Environment template
 ├── package.json            # Dependencies
