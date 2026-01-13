@@ -39,12 +39,7 @@ app.get('/', (req, res) => {
   res.json({
     message: 'Booking Widget API Server',
     version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth (POST)',
-      authHealth: '/api/auth/health',
-      health: '/api/health',
-      verifyPayment: '/api/verify-payment?session_id=xxx'
-    }
+   
   });
 });
 
