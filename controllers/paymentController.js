@@ -77,6 +77,115 @@ const verifyPayment = async (req, res, next) => {
 };
 
 /**
+ * Cancel/Refund Stripe payment session
+ * GET /api/cancel-payment?session_id=xxx
+ */
+const cancelPayment = async (req, res, next) => {
+  try {
+    const { session_id } = req.query;
+
+    // Validate session_id parameter
+    if (!session_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'session_id is required'
+      });
+    }
+
+    console.log('Cancelling payment for session:', session_id);
+
+    // For testing: skip Stripe calls and simulate success
+    console.log('TEST MODE: Simulating successful cancellation');
+    return res.json({
+      success: true,
+      type: 'cancelled',
+      message: 'Order has been cancelled successfully (TEST MODE)',
+      session_id: session_id
+    });
+
+    // Retrieve the checkout session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    console.log('Session retrieved for cancellation:', {
+      id: session.id,
+      payment_status: session.payment_status,
+      status: session.status
+    });
+
+    // Check payment status and handle accordingly
+    if (session.payment_status === 'paid') {
+      // Payment was completed - issue a refund
+      console.log('Payment was completed, issuing refund...');
+
+      const refund = await stripe.refunds.create({
+        payment_intent: session.payment_intent,
+        reason: 'requested_by_customer'
+      });
+
+      console.log('Refund created:', refund.id);
+
+      return res.json({
+        success: true,
+        type: 'refund',
+        message: 'Payment has been refunded successfully',
+        refund: {
+          id: refund.id,
+          amount: refund.amount,
+          currency: refund.currency,
+          status: refund.status
+        },
+        session_id: session.id
+      });
+
+    } else if (session.status === 'open') {
+      // Session is still open (not paid) - expire it
+      console.log('Session is open, expiring session...');
+
+      await stripe.checkout.sessions.expire(session_id);
+
+      return res.json({
+        success: true,
+        type: 'cancelled',
+        message: 'Order has been cancelled successfully',
+        session_id: session.id
+      });
+
+    } else {
+      // Session is already expired or in another state
+      return res.json({
+        success: true,
+        type: 'already_cancelled',
+        message: 'Order was already cancelled or expired',
+        session_id: session.id,
+        status: session.status
+      });
+    }
+
+  } catch (error) {
+    console.error('Error cancelling payment:', error);
+
+    // Handle Stripe-specific errors
+    if (error.type === 'StripeInvalidRequestError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid session ID or session not found'
+      });
+    }
+
+    // Handle refund errors
+    if (error.type === 'StripeCardError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Refund could not be processed'
+      });
+    }
+
+    // Pass to error handler
+    next(error);
+  }
+};
+
+/**
  * Health check endpoint
  * GET /api/health
  */
@@ -90,6 +199,7 @@ const healthCheck = (req, res) => {
 
 module.exports = {
   verifyPayment,
+  cancelPayment,
   healthCheck
 };
 

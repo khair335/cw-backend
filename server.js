@@ -7,7 +7,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 
 
 // CORS configuration - must be before other middleware
@@ -64,7 +64,5 @@ app.listen(PORT, () => {
   console.log(`  GET  /api/verify-payment?session_id=xxx - Verify payment`);
   console.log('='.repeat(50));
 });
-
-module.exports = app;
 
 
