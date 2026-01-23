@@ -94,15 +94,6 @@ const cancelPayment = async (req, res, next) => {
 
     console.log('Cancelling payment for session:', session_id);
 
-    // For testing: skip Stripe calls and simulate success
-    console.log('TEST MODE: Simulating successful cancellation');
-    return res.json({
-      success: true,
-      type: 'cancelled',
-      message: 'Order has been cancelled successfully (TEST MODE)',
-      session_id: session_id
-    });
-
     // Retrieve the checkout session from Stripe
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
